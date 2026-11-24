@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}导入曝光 CSV · 曝光台账{% endblock %}
+{% block content %}
+<section class="panel">
+  <h2>导入曝光 CSV</h2>
+  <p class="hint">
+    表头固定为 <code>{{ csv_fields }}</code>，整批按提交时的闰秒表校验：任一行不合格则整批不入库。
+    <code>start</code> 可填 UTC 文本（如 <code>2026-11-24 23:59:60</code>）或从 2000-01-01 00:00:00 UTC 起累计的整数实秒。
+    时长 1～3600 秒。CSV 原值会原样保存。表头只认 <code>start</code>；UTC 文本写法允许 <code>YYYY-MM-DD HH:MM:SS</code>（也接受 <code>T</code> 分隔或结尾 <code>Z</code>）。
+  </p>
+  <p><a href="{{ url_for('template_csv') }}">下载示例 CSV</a></p>
+
+  <form method="post" enctype="multipart/form-data" class="stack">
+    <label for="csv_file">上传 .csv 文件</label>
+    <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv">
+    <label for="csv_text">或粘贴 CSV 文本</label>
+    <textarea id="csv_text" name="csv_text" rows="8" placeholder="telescope,exposure_id,start,duration_s&#10;T1,EXP001,2026-11-24 00:00:00,600"></textarea>
+    <button type="submit">整批校验并导入</button>
+  </form>
+
+  {% if message %}<p class="error">{{ message }}</p>{% endif %}
+  {% if errors %}
+  <ul class="errors">
+    {% for detail in errors %}<li>{{ detail }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if result %}
+  <div class="success">
+    <h3>导入完成</h3>
+    <p>批次 #{{ result.batch_id }}，写入 {{ result.row_count }} 行，使用闰秒表 v{{ result.leap_version }}（{{ result.leap_days }} 个闰秒日）。</p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>当前状态</h2>
+  <dl class="facts">
+    <div><dt>已入库曝光</dt><dd>{{ stats.exposures }}</dd></div>
+    <div><dt>导入批次</dt><dd>{{ stats.batches }}</dd></div>
+    <div><dt>生效闰秒表</dt><dd>v{{ leap_version }}</dd></div>
+  </dl>
+</section>
+{% endblock %}

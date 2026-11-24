@@ -1,0 +1,15 @@
+services:
+  ledger:
+    build: .
+    image: exposure-ledger:local
+    ports:
+      - "8000:8000"
+    environment:
+      LEDGER_DB: /data/ledger.sqlite3
+      LEDGER_SECRET: ${LEDGER_SECRET:-local-compose-secret}
+    volumes:
+      - ledger-data:/data
+    restart: unless-stopped
+
+volumes:
+  ledger-data:

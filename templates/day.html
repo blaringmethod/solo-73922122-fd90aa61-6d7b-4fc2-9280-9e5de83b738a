@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}按 UTC 日取数 · 曝光台账{% endblock %}
+{% block content %}
+<section class="panel">
+  <h2>按 UTC 日期取数</h2>
+  <form class="row" method="get" action="{{ url_for('day_view') }}">
+    <label for="date">UTC 日期</label>
+    <input type="date" id="date" name="date" value="{{ raw_day }}" min="2000-01-01" max="9999-12-30" required>
+    <button type="submit">查看</button>
+    {% if report %}
+      <a class="button secondary" href="{{ url_for('day_csv', date=raw_day) }}">下载当天 CSV</a>
+    {% endif %}
+  </form>
+  <p class="hint">区间按左闭右开计算；正闰秒日共 86401 秒，最后一秒为 23:59:60。</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+</section>
+
+{% if report %}
+<section class="panel">
+  <h2>{{ report.day.isoformat() }} UTC</h2>
+  <dl class="facts">
+    <div><dt>闰秒日</dt><dd>{{ "是（86401 秒）" if report.leap_day else "否（86400 秒）" }}</dd></div>
+    <div><dt>当天起点（含）</dt><dd><code>{{ report.day_start_utc }}</code></dd></div>
+    <div><dt>当天终点（不含）</dt><dd><code>{{ report.day_end_utc }}</code></dd></div>
+    <div><dt>当天最后一秒</dt><dd><code>{{ report.day_last_utc }}</code></dd></div>
+    <div><dt>实秒范围</dt><dd><code>[{{ report.day_start_real }}, {{ report.day_end_real }})</code></dd></div>
+    <div><dt>闰秒表版本</dt><dd>v{{ report.leap_version }}</dd></div>
+    <div><dt>相交曝光</dt><dd>{{ report.total_rows }} 条</dd></div>
+    <div><dt>当天实秒合计</dt><dd>{{ report.total_seconds }} 秒</dd></div>
+  </dl>
+</section>
+
+<section class="panel">
+  <h2>当天相交曝光</h2>
+  {% if report.rows %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>望远镜</th>
+          <th>曝光号</th>
+          <th>原开始值</th>
+          <th>原时长(s)</th>
+          <th>当天起点（含）</th>
+          <th>当天终点（不含）</th>
+          <th>当天实秒</th>
+          <th>备注</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.rows %}
+        <tr>
+          <td>{{ row.telescope }}</td>
+          <td>{{ row.exposure_id }}</td>
+          <td><code>{{ row.source_start }}</code></td>
+          <td class="num">{{ row.source_duration_s }}</td>
+          <td><code>{{ row.window_start_utc }}</code></td>
+          <td><code>{{ row.window_end_utc }}</code></td>
+          <td class="num">{{ row.window_seconds }}</td>
+          <td class="notes">
+            {% if row.starts_before_day %}跨日进入{% endif %}
+            {% if row.ends_after_day %}{% if row.starts_before_day %}，{% endif %}跨日离开{% endif %}
+            {% if row.whole_day %}覆盖全天{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">当天没有相交的曝光。</p>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}

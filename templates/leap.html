@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}闰秒表 · 曝光台账{% endblock %}
+{% block content %}
+<section class="panel">
+  <h2>生效中的正闰秒日期表 <span class="tag">v{{ version }}</span></h2>
+  <p class="hint">
+    一行一个 <code>YYYY-MM-DD</code>，表示该 UTC 日在 23:59:59 之后插入一秒 23:59:60。<code>#</code> 起为注释。
+    换表按提交内容整批校验；若新表会让已入库的 UTC 文本失效，将列出相关曝光号并保留原表。
+  </p>
+  <p class="hint">共 {{ table.dates|length }} 个闰秒日，时区固定 UTC。</p>
+  <pre class="table-text">{{ table_text if table_text else "（空表：没有正闰秒日）" }}</pre>
+</section>
+
+<section class="panel">
+  <h2>替换闰秒表</h2>
+  <form method="post" class="stack">
+    <label for="leap_text">新表内容</label>
+    <textarea id="leap_text" name="leap_text" rows="10">{{ table_text }}</textarea>
+    <button type="submit">整批校验并替换</button>
+  </form>
+
+  {% if message %}<p class="error">{{ message }}</p>{% endif %}
+  {% if result and not message %}
+  <div class="success">
+    {% if result.unchanged %}
+    <p>提交内容与生效表一致，未做改动（v{{ result.version }}）。</p>
+    {% else %}
+    <p>已启用闰秒表 v{{ result.version }}（上一版 v{{ result.previous_version }}），重算 {{ result.updated_text_rows }} 条 UTC 文本曝光的实秒，共 {{ result.leap_days }} 个闰秒日。</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if offending %}
+  <div class="failure">
+    <h3>换表未生效，原表保留</h3>
+    <p>以下已入库的 UTC 时刻在新表下失效，请先修正数据：</p>
+    {% if offending|length >= 500 %}
+    <p class="hint">仅列出前 500 条；实际受影响的曝光可能更多。</p>
+    {% endif %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>曝光号</th><th>望远镜</th><th>原开始值</th><th>原因</th></tr></thead>
+        <tbody>
+          {% for item in offending %}
+          <tr>
+            <td>{{ item.exposure_id or "—" }}</td>
+            <td>{{ item.telescope or "—" }}</td>
+            <td><code>{{ item.start or "—" }}</code></td>
+            <td>{{ item.error }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>版本历史</h2>
+  {% if history %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>版本</th><th>启用时间</th><th>闰秒日数</th></tr></thead>
+      <tbody>
+        {% for item in history %}
+        <tr>
+          <td>v{{ item.version }}</td>
+          <td>{{ item.created_at }}</td>
+          <td class="num">{{ item.body.splitlines()|reject("equalto", "")|list|length }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">暂无历史。</p>
+  {% endif %}
+</section>
+{% endblock %}

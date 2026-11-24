@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}曝光台账{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">UTC</span>
+    <div>
+      <strong>巡天曝光台账</strong>
+      <small>按 UTC 日期对齐多台望远镜</small>
+    </div>
+  </div>
+  <nav>
+    <a class="{{ 'active' if active == 'day' else '' }}" href="{{ url_for('day_view') }}">取数</a>
+    <a class="{{ 'active' if active == 'import' else '' }}" href="{{ url_for('import_view') }}">导入</a>
+    <a class="{{ 'active' if active == 'leap' else '' }}" href="{{ url_for('leap_view') }}">闰秒表</a>
+  </nav>
+  <div class="status">
+    <span>{{ stats.exposures }} 条曝光</span>
+    <span>闰秒表 v{{ stats.leap_version }}</span>
+  </div>
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+<footer>
+  <span>实秒起点：2000-01-01 00:00:00 UTC</span>
+  <span>左闭右开区间</span>
+</footer>
+</body>
+</html>
